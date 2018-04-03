@@ -1,7 +1,7 @@
 #!/bin/bash
 # Copyright Cryptojatt(c) 2018 
 # https://github.com/cryptojatt
-# install_karmanode.sh version 1.0
+# install_karmanode.sh version 1.1
 # Bitcoin Donation address: 19rUHQQ2PNGzGzvLgoY9SiEwUCcNxJ2cqT
 # Litecoin Donation address: LiBKYy6ZpCzTPpkqYaHPmjfuiQiLvxkNDE
 # Shekel Donation address: JQJ1GanDU3c5RZwNjBXk68wFdxEJKLwWZU
@@ -203,7 +203,7 @@ else
 	echo -e "${RED}Adding ssh port to UFW rules - ${GREEN}ufw limit $ssh/tcp comment 'SSH port rate limit'${NC}"
 	ufw --force limit $ssh/tcp comment 'SSH port rate limit' > /dev/null
 fi
-if [ "¬ufw satus | grep -qw active" ];
+if [ "Â¬ufw satus | grep -qw active" ];
 then
 	echo -e "${RED}UFW is active${NC}"
 else
@@ -413,6 +413,14 @@ clear
 	rm -rf $homedir/$gitdir
 }
 
+install_swap () {
+fallocate -l 3G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+echo -e "/swapfile none swap sw 0 0 \n" >> /etc/fstab
+}
+
 run_apt () {
 clear
 apt-get update &&
@@ -471,6 +479,7 @@ then
 	echo -e "${RED}This is Ubuntu 14.04"	
 	echo -e "Installing ${GREEN}$COIN ${RED}on 14.04.from scratch${NC}"
 	libzmq="libzmq3"
+	install_swap
 	run_apt
 	check_ufw
 	git_install
@@ -482,6 +491,7 @@ then
 	echo -e "${RED}This is Ubuntu 16.04"
 	echo -e "Installing ${GREEN}$COIN ${RED}on 16.04 from scratch${NC}"
 	libzmq="libzmq3-dev"
+	install_swap
 	run_apt
 	check_ufw
 	git_install
@@ -492,6 +502,7 @@ if grep -q centos /etc/*elease
 then
 	echo -e "${RED}This is CentOS"
 	echo -e "Installing ${GREEN}$COIN ${RED}on CentOS from scratch${NC}"
+	install_swap
 	run_yum
 	check_iptables
 	git_install
