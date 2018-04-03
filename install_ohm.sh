@@ -203,7 +203,7 @@ else
 	echo -e "${RED}Adding ssh port to UFW rules - ${GREEN}ufw limit $ssh/tcp comment 'SSH port rate limit'${NC}"
 	ufw --force limit $ssh/tcp comment 'SSH port rate limit' > /dev/null
 fi
-if [ "¬ufw satus | grep -qw active" ];
+if [ "ufw status | grep -qw active" ];
 then
 	echo -e "${RED}UFW is active${NC}"
 else
