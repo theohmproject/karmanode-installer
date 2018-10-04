@@ -1,7 +1,7 @@
 #!/bin/bash
 # Copyright Cryptojatt(c) 2018 
 # https://github.com/cryptojatt
-# install_ohm.sh version 1.2
+# install_ohm.sh version 2.3.2
 #
 # You may add, modify, remove and reuse anything below this notice
 # please retain this notice and donation addresses
@@ -31,7 +31,9 @@ datadir="ohmc"
 daemon="ohmcd"
 cli="ohmc-cli"
 gitdir="ohmcoin"
-GITREPO="https://github.com/theohmproject/ohmcoin.git"
+zip="ohmcoin-2.3.2-64-linux.tar.gz"
+ziprepo="https://github.com/theohmproject/ohmcoin/releases/download/2.3.2/ohmcoin-2.3.2-64-linux.tar.gz"
+#GITREPO="https://github.com/theohmproject/ohmcoin.git"
 getblockcount="`curl -s http://explore.ohmcoin.org/api/getblockcount`"
 PORT="52020"
 externalip="`curl -s http://whatismyip.akamai.com`"
@@ -313,7 +315,7 @@ if [ -f $homedir/.$datadir/$datadir.conf ]; then
         	libzmq="libzmq3"
         	run_apt
         	check_ufw
-        	git_install
+        	zip_install
         	start_karmanode
 	fi # ends the 14.04 if-statement
 	if grep -q 16.04 /etc/*elease
@@ -323,7 +325,7 @@ if [ -f $homedir/.$datadir/$datadir.conf ]; then
         	libzmq="libzmq3-dev"
         	run_apt
         	check_ufw
-        	git_install
+        	zip_install
         	start_karmanode
 	fi # ends the 16.04 if-statement
 	if grep -q 18.04 /etc/*elease
@@ -333,7 +335,7 @@ if [ -f $homedir/.$datadir/$datadir.conf ]; then
         	libzmq="libzmq3-dev"
         	run_apt
         	check_ufw
-        	git_install
+        	zip_install
         	start_karmanode
 	fi # ends the 18.04 if-statement
 	if grep -q centos /etc/*elease
@@ -342,7 +344,7 @@ if [ -f $homedir/.$datadir/$datadir.conf ]; then
         	echo -e "Installing ${GREEN}$COIN ${RED}on CentOS from scratch${NC}"
         	run_yum
         	check_iptables
-        	git_install
+        	zip_install
         	start_karmanode
 	fi
 	if ! grep -q 14.04 /etc/*elease && ! grep -q 16.04 /etc/*elease && ! grep -q 18.04 /etc/*elease && ! grep -q centos /etc/*elease;
@@ -391,6 +393,26 @@ clear
 } # end the iptables function
 
 ######## ======== INSTALL FUNCTIONS ======== ########
+zip_install () {
+clear
+	if [ -f "/usr/local/bin/$daemon" ]; 
+	then 
+		echo -e "${RED}found existing ${GREEN}$daemon"
+		echo -e "${RED}Deleting existing daemon${NC}"
+		rm /usr/local/bin/$daemon
+		rm /usr/local/bin/$cli
+		echo -e "${RED}$daemon and $cli manually deleted${NC}"
+	fi
+	# Downloads and extracts the current latest release, moves to the correct location then runs $daemon
+	wget $ziprepo
+	tar -xvzf $zip
+	cp -r $daemon $cli /usr/local/bin
+	echo -e "${RED}$COIN installed${NC}"
+	sleep 2
+	cd ..
+	rm -rf $homedir/$zip
+}
+
 git_install () {
 clear
 	# Downloads and extracts the current latest release, moves to the correct location then runs $daemon
@@ -490,7 +512,7 @@ then
 	install_swap
 	run_apt
 	check_ufw
-	git_install
+	zip_install
 	configure
 	start_karmanode
 fi # ends the 14.04 if-statement
@@ -502,7 +524,7 @@ then
 	install_swap
 	run_apt
 	check_ufw
-	git_install
+	zip_install
 	configure
 	start_karmanode
 fi # ends the 16.04 if-statement
@@ -514,7 +536,7 @@ then
 	install_swap
 	run_apt
 	check_ufw
-	git_install
+	zip_install
 	configure
 	start_karmanode
 fi # ends the 18.04 if-statement
@@ -525,7 +547,7 @@ then
 	install_swap
 	run_yum
 	check_iptables
-	git_install
+	zip_install
 	configure
 	start_karmanode
 fi
@@ -667,23 +689,18 @@ cat <<EOF > /etc/systemd/system/$COIN.service
 [Unit]
 Description=$COIN's distributed currency daemon
 After=network.target
-
 [Service]
 User=$currentuser
-
-
 Type=forking
 PIDFile=$homedir/.$datadir/$daemon.pid
 ExecStart=/usr/local/bin/$daemon -daemon -pid=$homedir/.$datadir/$daemon.pid -conf=$homedir/.$datadir/$datadir.conf -datadir=$homedir/.$datadir
 #-disablewallet
-
 Restart=always
 PrivateTmp=true
 TimeoutStopSec=60s
 TimeoutStartSec=2s
 StartLimitInterval=120s
 StartLimitBurst=5
-
 [Install]
 WantedBy=multi-user.target
 EOF
@@ -706,11 +723,9 @@ read -r email
 touch $homedir/check.sh
 cat <<EOF  > $homedir/check.sh
 #!/bin/bash
-
 ipaddr=`curl -s http://whatismyip.akamai.com`
 echo -e "Your External IP Address is..."
 echo -e $externalip
-
 abort()
 {
     echo -e >&2 '
@@ -751,11 +766,8 @@ echo -e "This means the karmanode is Enabled"
 echo -e ""
 echo -e ""
 }
-
 trap 'abort' 0
-
 set -e
-
 running=`$cli getinfo | grep version`
 if [[ $running == *"version"* ]]; then
    echo -e "$COIN RUNNING!"
@@ -790,7 +802,6 @@ echo -e "This means the karmanode is Enabled"
 echo -e ""
 echo -e ""
 fi
-
 check=`$cli karmanode list $add | grep ENABLED`
 echo -e $check
 if [[ $check == *"POS_ERROR"* ]]; then
@@ -829,9 +840,7 @@ echo -e ""
 echo -e "This means the karmanode is Enabled"
 echo -e ""
 echo -e ""
-
 echo -e $check
-
 fi
 if [[ $check == *"ENABLED"* ]]; then
    echo -e "$COIN ENABLED!"
@@ -864,11 +873,8 @@ echo -e ""
 echo -e "This means the karmanode is Enabled"
 echo -e ""
 echo -e ""
-
 fi
-
 trap : 0
-
 EOF
 
 if [ "$email" != "" ]
@@ -913,16 +919,14 @@ do
 echo -e "${RED}===================================================="
 echo -e "==          Karmanode Wallet Installer            =="
 echo -e "== For Ubuntu 14.04 or 16.04 or 18.04 or CentOS7  =="
-echo -e "==                  version 2.1                   =="
+echo -e "==                  version 2.3.2                   =="
 echo -e "==                                                =="
 echo -e "----------------------------------------------------"
 echo -e "${NC}"
-echo -e "Please consider donating for my time and effort I put into this	:" 
 echo -e ""
 sleep 1
 cat <<EOF
 $(echo -e    "${RED}    Please enter your choice:")
-
 $(echo -e    "${GREEN}    Install Wallet & Set Up karmanode  (1)")
     Upgrade Wallet & Start karmanode   (2)
     Start karmanode                    (3)
